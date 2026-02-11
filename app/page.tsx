@@ -1,97 +1,75 @@
-'use client';
-
-import Link from 'next/link';
+import Header from '@/components/Header';
+import Slider from '@/components/Slider';
 
 export default function Home() {
   return (
-    <div style={{
-      minHeight: '100vh',
-      backgroundColor: '#f5f5f5'
-    }}>
-      {/* Header */}
-      <header style={{
-        backgroundColor: '#ffffff',
-        padding: '1rem 2rem',
-        boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center'
-      }}>
-        <h1 style={{
-          margin: 0,
-          fontSize: '1.5rem',
-          color: '#333'
-        }}>
-          HealthCare Platform
-        </h1>
-        
-        <div style={{ display: 'flex', gap: '1rem' }}>
-          <Link href="/login">
-            <button style={{
-              padding: '0.5rem 1.5rem',
-              fontSize: '1rem',
-              backgroundColor: '#007bff',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: 'pointer',
-              transition: 'background-color 0.3s'
-            }}
-            onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#0056b3'}
-            onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#007bff'}
-            >
-              Login
-            </button>
-          </Link>
-          
-          <Link href="/signup">
-            <button style={{
-              padding: '0.5rem 1.5rem',
-              fontSize: '1rem',
-              backgroundColor: '#28a745',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: 'pointer',
-              transition: 'background-color 0.3s'
-            }}
-            onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#218838'}
-            onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#28a745'}
-            >
-              Signup
-            </button>
-          </Link>
-        </div>
-      </header>
+    <div className="min-h-screen bg-white">
+      <Header />
 
-      {/* Main Content */}
-      <main style={{
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        minHeight: 'calc(100vh - 80px)',
-        padding: '2rem'
-      }}>
-        <div style={{
-          textAlign: 'center',
-          maxWidth: '600px'
-        }}>
-          <h2 style={{
-            fontSize: '3rem',
-            color: '#333',
-            marginBottom: '1rem'
-          }}>
-            Welcome to HealthCare Platform!
+      {/* Hero Section */}
+      <section className="bg-gradient-to-br from-navy-50 to-slate-50 py-20 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-4xl mx-auto text-center">
+          <h2 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-navy-900 mb-6">
+            Seamless Healthcare Communication
           </h2>
-          <p style={{
-            fontSize: '1.2rem',
-            color: '#666',
-            lineHeight: '1.6'
-          }}>
-            This is a simple landing page built with Next.js. Ready to integrate with your Golang backend APIs.
+          <p className="text-lg sm:text-xl text-slate-600 mb-8 max-w-2xl mx-auto">
+            Connect patients and doctors through a secure, minimalist platform. Access medical services anytime, anywhere.
           </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <button className="px-8 py-3 bg-navy-600 text-white rounded-lg hover:bg-navy-700 transition-colors font-medium">
+              Get Started
+            </button>
+            <button className="px-8 py-3 border-2 border-navy-600 text-navy-600 rounded-lg hover:bg-navy-50 transition-colors font-medium">
+              Learn More
+            </button>
+          </div>
         </div>
-      </main>
+      </section>
+
+      {/* Features Slider */}
+      <Slider />
+
+      {/* Footer */}
+      <footer className="bg-navy-900 text-white py-12 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
+          <div>
+            <div className="flex items-center gap-2 mb-4">
+              <div className="w-8 h-8 bg-navy-400 rounded-lg"></div>
+              <span className="font-bold">MedInfo</span>
+            </div>
+            <p className="text-slate-400 text-sm">
+              Connecting patients and doctors for better healthcare.
+            </p>
+          </div>
+          <div>
+            <h3 className="font-bold mb-4">Product</h3>
+            <ul className="space-y-2 text-sm text-slate-400">
+              <li><a href="#" className="hover:text-white transition-colors">Features</a></li>
+              <li><a href="#" className="hover:text-white transition-colors">Pricing</a></li>
+              <li><a href="#" className="hover:text-white transition-colors">Security</a></li>
+            </ul>
+          </div>
+          <div>
+            <h3 className="font-bold mb-4">Company</h3>
+            <ul className="space-y-2 text-sm text-slate-400">
+              <li><a href="#" className="hover:text-white transition-colors">About</a></li>
+              <li><a href="#" className="hover:text-white transition-colors">Blog</a></li>
+              <li><a href="#" className="hover:text-white transition-colors">Careers</a></li>
+            </ul>
+          </div>
+          <div>
+            <h3 className="font-bold mb-4">Legal</h3>
+            <ul className="space-y-2 text-sm text-slate-400">
+              <li><a href="#" className="hover:text-white transition-colors">Privacy</a></li>
+              <li><a href="#" className="hover:text-white transition-colors">Terms</a></li>
+              <li><a href="#" className="hover:text-white transition-colors">Contact</a></li>
+            </ul>
+          </div>
+        </div>
+        <div className="border-t border-navy-800 pt-8 text-center text-slate-500 text-sm">
+          <p>&copy; 2026 MedInfo Assistant. All rights reserved.</p>
+        </div>
+      </footer>
     </div>
-  )
+  );
 }

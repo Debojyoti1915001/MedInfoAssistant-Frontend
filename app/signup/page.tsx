@@ -3,193 +3,177 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '@/app/context/AuthContext';
 
 export default function SignupPage() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [role, setRole] = useState<'patient' | 'doctor'>('patient');
+  const [error, setError] = useState('');
   const router = useRouter();
+  const { signup } = useAuth();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Signup submitted:', { name, email, password, confirmPassword });
-    // Business logic will go here - call your Golang API
-    
-    // For now, just navigate to dashboard (no validation)
-    router.push('/dashboard');
+    setError('');
+
+    // Validation
+    if (!name.trim()) {
+      setError('Full name is required');
+      return;
+    }
+    if (!email.trim()) {
+      setError('Email is required');
+      return;
+    }
+    if (password.length < 6) {
+      setError('Password must be at least 6 characters');
+      return;
+    }
+    if (password !== confirmPassword) {
+      setError('Passwords do not match');
+      return;
+    }
+
+    try {
+      signup(name, email, password, role);
+      router.push('/dashboard');
+    } catch (err: any) {
+      setError(err.message || 'Signup failed');
+    }
   };
 
   return (
-    <div style={{
-      minHeight: '100vh',
-      display: 'flex',
-      justifyContent: 'center',
-      alignItems: 'center',
-      backgroundColor: '#f5f5f5'
-    }}>
-      <div style={{
-        backgroundColor: 'white',
-        padding: '2rem',
-        borderRadius: '8px',
-        boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
-        width: '100%',
-        maxWidth: '400px'
-      }}>
-        <h2 style={{
-          textAlign: 'center',
-          marginBottom: '1.5rem',
-          color: '#333'
-        }}>
-          Sign Up
-        </h2>
+    <div className="min-h-screen flex justify-center items-center bg-slate-50 px-4">
+      <div className="bg-white rounded-lg shadow-lg p-8 w-full max-w-md">
+        {/* Header */}
+        <div className="text-center mb-8">
+          <h2 className="text-3xl font-bold text-navy-900 mb-2">Create Account</h2>
+          <p className="text-slate-600">Join us as a patient or doctor</p>
+        </div>
 
-        <form onSubmit={handleSubmit}>
-          <div style={{ marginBottom: '1rem' }}>
-            <label style={{
-              display: 'block',
-              marginBottom: '0.5rem',
-              color: '#555',
-              fontSize: '0.9rem'
-            }}>
+        {/* Error Message */}
+        {error && (
+          <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+            <p className="text-red-700 text-sm">{error}</p>
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Full Name */}
+          <div>
+            <label className="block text-sm font-medium text-navy-900 mb-2">
               Full Name
             </label>
             <input
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              required
-              style={{
-                width: '100%',
-                padding: '0.75rem',
-                fontSize: '1rem',
-                border: '1px solid #ddd',
-                borderRadius: '4px',
-                boxSizing: 'border-box'
-              }}
               placeholder="Enter your full name"
+              className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-navy-600 focus:border-transparent transition"
             />
           </div>
 
-          <div style={{ marginBottom: '1rem' }}>
-            <label style={{
-              display: 'block',
-              marginBottom: '0.5rem',
-              color: '#555',
-              fontSize: '0.9rem'
-            }}>
-              Email
+          {/* Email */}
+          <div>
+            <label className="block text-sm font-medium text-navy-900 mb-2">
+              Email Address
             </label>
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              required
-              style={{
-                width: '100%',
-                padding: '0.75rem',
-                fontSize: '1rem',
-                border: '1px solid #ddd',
-                borderRadius: '4px',
-                boxSizing: 'border-box'
-              }}
               placeholder="Enter your email"
+              className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-navy-600 focus:border-transparent transition"
             />
           </div>
 
-          <div style={{ marginBottom: '1rem' }}>
-            <label style={{
-              display: 'block',
-              marginBottom: '0.5rem',
-              color: '#555',
-              fontSize: '0.9rem'
-            }}>
+          {/* Role Selection */}
+          <div>
+            <label className="block text-sm font-medium text-navy-900 mb-3">
+              I am a...
+            </label>
+            <div className="flex gap-4">
+              <label className="flex items-center cursor-pointer">
+                <input
+                  type="radio"
+                  name="role"
+                  value="patient"
+                  checked={role === 'patient'}
+                  onChange={(e) => setRole(e.target.value as 'patient')}
+                  className="w-4 h-4 text-navy-600"
+                />
+                <span className="ml-2 text-slate-700">Patient</span>
+              </label>
+              <label className="flex items-center cursor-pointer">
+                <input
+                  type="radio"
+                  name="role"
+                  value="doctor"
+                  checked={role === 'doctor'}
+                  onChange={(e) => setRole(e.target.value as 'doctor')}
+                  className="w-4 h-4 text-navy-600"
+                />
+                <span className="ml-2 text-slate-700">Doctor</span>
+              </label>
+            </div>
+          </div>
+
+          {/* Password */}
+          <div>
+            <label className="block text-sm font-medium text-navy-900 mb-2">
               Password
             </label>
             <input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              required
-              style={{
-                width: '100%',
-                padding: '0.75rem',
-                fontSize: '1rem',
-                border: '1px solid #ddd',
-                borderRadius: '4px',
-                boxSizing: 'border-box'
-              }}
               placeholder="Enter your password"
+              className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-navy-600 focus:border-transparent transition"
             />
           </div>
 
-          <div style={{ marginBottom: '1.5rem' }}>
-            <label style={{
-              display: 'block',
-              marginBottom: '0.5rem',
-              color: '#555',
-              fontSize: '0.9rem'
-            }}>
+          {/* Confirm Password */}
+          <div>
+            <label className="block text-sm font-medium text-navy-900 mb-2">
               Confirm Password
             </label>
             <input
               type="password"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
-              required
-              style={{
-                width: '100%',
-                padding: '0.75rem',
-                fontSize: '1rem',
-                border: '1px solid #ddd',
-                borderRadius: '4px',
-                boxSizing: 'border-box'
-              }}
               placeholder="Confirm your password"
+              className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-navy-600 focus:border-transparent transition"
             />
           </div>
 
+          {/* Submit Button */}
           <button
             type="submit"
-            style={{
-              width: '100%',
-              padding: '0.75rem',
-              fontSize: '1rem',
-              backgroundColor: '#28a745',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: 'pointer',
-              marginBottom: '1rem',
-              transition: 'background-color 0.3s'
-            }}
-            onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#218838'}
-            onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#28a745'}
+            className="w-full bg-navy-600 text-white py-2 rounded-lg hover:bg-navy-700 transition-colors font-medium mt-6"
           >
-            Sign Up
+            Create Account
           </button>
-
-          <Link href="/">
-            <button
-              type="button"
-              style={{
-                width: '100%',
-                padding: '0.75rem',
-                fontSize: '1rem',
-                backgroundColor: '#6c757d',
-                color: 'white',
-                border: 'none',
-                borderRadius: '4px',
-                cursor: 'pointer',
-                transition: 'background-color 0.3s'
-              }}
-              onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#5a6268'}
-              onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#6c757d'}
-            >
-              Back to Home
-            </button>
-          </Link>
         </form>
+
+        {/* Sign In Link */}
+        <div className="mt-6 text-center text-slate-600">
+          <p>
+            Already have an account?{' '}
+            <Link href="/login" className="text-navy-600 hover:text-navy-700 font-medium">
+              Sign In
+            </Link>
+          </p>
+        </div>
+
+        {/* Back to Home */}
+        <div className="mt-4 text-center">
+          <Link href="/" className="text-slate-600 hover:text-slate-700 text-sm">
+            ← Back to Home
+          </Link>
+        </div>
       </div>
     </div>
   );

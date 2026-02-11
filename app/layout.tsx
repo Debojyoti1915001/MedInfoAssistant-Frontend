@@ -1,8 +1,10 @@
 import type { Metadata } from 'next'
+import './globals.css'
+import { AuthProvider } from './context/AuthContext'
 
 export const metadata: Metadata = {
-  title: 'HealthCare Platform',
-  description: 'Healthcare platform built with Next.js',
+  title: 'MedInfo Assistant - Patient-Doctor Communication',
+  description: 'A minimalistic platform connecting patients and doctors through secure communication',
 }
 
 export default function RootLayout({
@@ -12,12 +14,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body style={{
-        margin: 0,
-        padding: 0,
-        fontFamily: 'Arial, sans-serif'
-      }}>
-        {children}
+      <body>
+        <AuthProvider>
+          {children}
+        </AuthProvider>
       </body>
     </html>
   )

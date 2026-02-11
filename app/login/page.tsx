@@ -3,139 +3,143 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '@/app/context/AuthContext';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
   const router = useRouter();
+  const { login } = useAuth();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Login submitted:', { email, password });
-    // Business logic will go here - call your Golang API
+    setError('');
+
+    if (!email.trim()) {
+      setError('Email is required');
+      return;
+    }
+    if (!password.trim()) {
+      setError('Password is required');
+      return;
+    }
+
+    try {
+      login(email, password);
+      router.push('/dashboard');
+    } catch (err: any) {
+      setError(err.message || 'Login failed');
+    }
+  };
+
+  const handleDemoLogin = (role: 'patient' | 'doctor') => {
+    const demoEmail = role === 'patient' ? 'patient@demo.com' : 'doctor@demo.com';
+    const demoPassword = 'password123';
     
-    // For now, just navigate to dashboard (no validation)
-    router.push('/dashboard');
+    setEmail(demoEmail);
+    setPassword(demoPassword);
+    
+    // Auto-fill for demo (actual login will happen on form submit)
+    setTimeout(() => {
+      try {
+        login(demoEmail, demoPassword);
+        router.push('/dashboard');
+      } catch (err) {
+        setError('Demo login failed');
+      }
+    }, 100);
   };
 
   return (
-    <div style={{
-      minHeight: '100vh',
-      display: 'flex',
-      justifyContent: 'center',
-      alignItems: 'center',
-      backgroundColor: '#f5f5f5'
-    }}>
-      <div style={{
-        backgroundColor: 'white',
-        padding: '2rem',
-        borderRadius: '8px',
-        boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
-        width: '100%',
-        maxWidth: '400px'
-      }}>
-        <h2 style={{
-          textAlign: 'center',
-          marginBottom: '1.5rem',
-          color: '#333'
-        }}>
-          Login
-        </h2>
+    <div className="min-h-screen flex justify-center items-center bg-slate-50 px-4">
+      <div className="bg-white rounded-lg shadow-lg p-8 w-full max-w-md">
+        {/* Header */}
+        <div className="text-center mb-8">
+          <h2 className="text-3xl font-bold text-navy-900 mb-2">Welcome Back</h2>
+          <p className="text-slate-600">Sign in to your account</p>
+        </div>
 
-        <form onSubmit={handleSubmit}>
-          <div style={{ marginBottom: '1rem' }}>
-            <label style={{
-              display: 'block',
-              marginBottom: '0.5rem',
-              color: '#555',
-              fontSize: '0.9rem'
-            }}>
-              Email
+        {/* Error Message */}
+        {error && (
+          <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+            <p className="text-red-700 text-sm">{error}</p>
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Email */}
+          <div>
+            <label className="block text-sm font-medium text-navy-900 mb-2">
+              Email Address
             </label>
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              required
-              style={{
-                width: '100%',
-                padding: '0.75rem',
-                fontSize: '1rem',
-                border: '1px solid #ddd',
-                borderRadius: '4px',
-                boxSizing: 'border-box'
-              }}
               placeholder="Enter your email"
+              className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-navy-600 focus:border-transparent transition"
             />
           </div>
 
-          <div style={{ marginBottom: '1.5rem' }}>
-            <label style={{
-              display: 'block',
-              marginBottom: '0.5rem',
-              color: '#555',
-              fontSize: '0.9rem'
-            }}>
+          {/* Password */}
+          <div>
+            <label className="block text-sm font-medium text-navy-900 mb-2">
               Password
             </label>
             <input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              required
-              style={{
-                width: '100%',
-                padding: '0.75rem',
-                fontSize: '1rem',
-                border: '1px solid #ddd',
-                borderRadius: '4px',
-                boxSizing: 'border-box'
-              }}
               placeholder="Enter your password"
+              className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-navy-600 focus:border-transparent transition"
             />
           </div>
 
+          {/* Login Button */}
           <button
             type="submit"
-            style={{
-              width: '100%',
-              padding: '0.75rem',
-              fontSize: '1rem',
-              backgroundColor: '#007bff',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: 'pointer',
-              marginBottom: '1rem',
-              transition: 'background-color 0.3s'
-            }}
-            onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#0056b3'}
-            onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#007bff'}
+            className="w-full bg-navy-600 text-white py-2 rounded-lg hover:bg-navy-700 transition-colors font-medium mt-6"
           >
-            Login
+            Sign In
           </button>
-
-          <Link href="/">
-            <button
-              type="button"
-              style={{
-                width: '100%',
-                padding: '0.75rem',
-                fontSize: '1rem',
-                backgroundColor: '#6c757d',
-                color: 'white',
-                border: 'none',
-                borderRadius: '4px',
-                cursor: 'pointer',
-                transition: 'background-color 0.3s'
-              }}
-              onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#5a6268'}
-              onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#6c757d'}
-            >
-              Back to Home
-            </button>
-          </Link>
         </form>
+
+        {/* Demo Logins */}
+        <div className="mt-6 pt-6 border-t border-slate-200">
+          <p className="text-sm text-slate-600 text-center mb-4">Try demo accounts:</p>
+          <div className="space-y-2">
+            <button
+              onClick={() => handleDemoLogin('patient')}
+              className="w-full px-4 py-2 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition-colors text-sm font-medium"
+            >
+              Demo Patient
+            </button>
+            <button
+              onClick={() => handleDemoLogin('doctor')}
+              className="w-full px-4 py-2 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition-colors text-sm font-medium"
+            >
+              Demo Doctor
+            </button>
+          </div>
+        </div>
+
+        {/* Sign Up Link */}
+        <div className="mt-6 text-center text-slate-600">
+          <p>
+            Don't have an account?{' '}
+            <Link href="/signup" className="text-navy-600 hover:text-navy-700 font-medium">
+              Sign Up
+            </Link>
+          </p>
+        </div>
+
+        {/* Back to Home */}
+        <div className="mt-4 text-center">
+          <Link href="/" className="text-slate-600 hover:text-slate-700 text-sm">
+            ← Back to Home
+          </Link>
+        </div>
       </div>
     </div>
   );
