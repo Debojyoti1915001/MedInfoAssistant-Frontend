@@ -74,6 +74,19 @@
         "mimetype": "image/jpeg",
         "size": 1026989
       }
+    },
+    {
+      "_presId": "b0e05ee5-ea38-4a97-9da3-f5c81d9288d7",
+      "doc": "1",
+      "patientId": "1",
+      "symptoms": "something",
+      "createdDate": "2026-02-18T19:24:23.184Z",
+      "file": {
+        "name": "133630886925268313.jpg",
+        "path": "/uploads/155bd91a-8942-49b4-9b26-fe588f491ae6-133630886925268313.jpg",
+        "mimetype": "image/jpeg",
+        "size": 1690881
+      }
     }
   ]
 }
