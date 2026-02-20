@@ -1,7 +1,12 @@
 export interface User {
+  id: number
   name: string
   email: string
-  role: 'doctor' | 'patient'
-  patient_id?: string
-  doctor_id?: string
+  phnNumber?: string
+  speciality?: string
+  username?: string
+  accuracy?: number
+  token?: string
+  createdAt?: string
+  role?: 'doctor' | 'patient'
 }

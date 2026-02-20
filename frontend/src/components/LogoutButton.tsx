@@ -15,7 +15,9 @@ const LogoutButton = () => {
 
   const handleLogout = async () => {
     await logout()
-    navigate('/login')
+    // Clear session and redirect
+    setSession(null)
+    window.location.href = '/login'
   }
 
   return (

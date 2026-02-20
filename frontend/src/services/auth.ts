@@ -1,9 +1,61 @@
 import { User } from '../types/user'
+import { decodeToken, setTokenCookie, getTokenFromCookie, removeTokenCookie } from '../utils/jwt'
 
-const API_URL = 'http://localhost:8080'
+// const API_URL = 'http://localhost:8080'
+const API_URL = 'https://medinfoassistant-backend.onrender.com'
 
+// Patient signup
+export const signupPatient = async (
+  name: string,
+  email: string,
+  phnNumber: string,
+  password: string
+): Promise<User> => {
+  const response = await fetch(`${API_URL}/api/users/create`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ name, email, phnNumber, password }),
+  })
+  console.log('Signup response status:', response.status)
+  if (!response.ok) {
+    const error = await response.text()
+    throw new Error(error || 'Signup failed')
+  }
+
+  const data = (await response.json()) as User
+  return data
+}
+
+// Doctor signup
+export const signupDoctor = async (
+  name: string,
+  email: string,
+  phnNumber: string,
+  speciality: string,
+  username: string,
+  password: string
+): Promise<User> => {
+  const response = await fetch(`${API_URL}/api/doctors/create`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ name, email, phnNumber, speciality, username, password }),
+  })
+  if (!response.ok) {
+    const error = await response.text()
+    throw new Error(error || 'Doctor signup failed')
+  }
+
+  const data = (await response.json()) as User
+  return data
+}
+
+// Patient login
 export const login = async (email: string, password: string): Promise<User> => {
-  const response = await fetch(`${API_URL}/auth/login`, {
+  const response = await fetch(`${API_URL}/api/users/login`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -15,25 +67,79 @@ export const login = async (email: string, password: string): Promise<User> => {
     throw new Error('Invalid credentials')
   }
 
-  const data = (await response.json()) as { user: User }
-  return data.user
+  const data = (await response.json()) as User
+  
+  // Extract role from JWT token
+  if (data.token) {
+    const decoded = decodeToken(data.token)
+    if (decoded) {
+      data.role = decoded.role === 'user' ? 'patient' : (decoded.role as any)
+    }
+    // Store token in cookie
+    setTokenCookie(data.token)
+  }
+
+  return data
+}
+
+// Doctor login
+export const loginDoctor = async (email: string, password: string): Promise<User> => {
+  const response = await fetch(`${API_URL}/api/doctors/login`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    credentials: 'include',
+    body: JSON.stringify({ email, password }),
+  })
+  if (!response.ok) {
+    throw new Error('Invalid credentials')
+  }
+
+  const data = (await response.json()) as User
+  
+  // Extract role from JWT token
+  if (data.token) {
+    const decoded = decodeToken(data.token)
+    console.log('Decoded token:', decoded)
+    if (decoded) {
+      data.role = decoded.role === 'user' ? 'patient' : (decoded.role as 'doctor' | 'patient')
+    }
+    // Store token in cookie
+    setTokenCookie(data.token)
+  }
+
+  return data
 }
 
 export const getSession = async (): Promise<User | null> => {
-  const response = await fetch(`${API_URL}/auth/session`, {
-    credentials: 'include',
-  })
-
-  if (!response.ok) {
+  const token = getTokenFromCookie()
+  
+  if (!token) {
     return null
   }
 
-  return (await response.json()) as User | null
+  // Decode token to get user data
+  const decoded = decodeToken(token)
+  if (!decoded) {
+    removeTokenCookie()
+    return null
+  }
+
+  // Check if token is expired
+  if (decoded.exp * 1000 < Date.now()) {
+    removeTokenCookie()
+    return null
+  }
+
+  return {
+    id: decoded.id,
+    email: decoded.email,
+    token: token,
+    role: decoded.role === 'user' ? 'patient' : (decoded.role as any),
+  } as User
 }
 
 export const logout = async (): Promise<void> => {
-  await fetch(`${API_URL}/auth/logout`, {
-    method: 'POST',
-    credentials: 'include',
-  })
+  removeTokenCookie()
 }

@@ -1,10 +1,11 @@
 import { FormEvent, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { login } from '../services/auth'
+import { login, loginDoctor } from '../services/auth'
 
 const LoginForm = () => {
   const [error, setError] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [role, setRole] = useState('patient')
   const navigate = useNavigate()
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -17,8 +18,14 @@ const LoginForm = () => {
     const password = String(formData.get('password') ?? '')
 
     try {
-      const user = await login(email, password)
-      // Route based on user role
+      let user
+      if (role === 'doctor') {
+        user = await loginDoctor(email, password)
+      } else {
+        user = await login(email, password)
+      }
+      
+      // Route based on user role (extracted from JWT token)
       if (user.role === 'doctor') {
         navigate('/dashboard/doctor')
       } else {
@@ -33,6 +40,34 @@ const LoginForm = () => {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
+      <div>
+        <label className="block text-sm font-medium text-navy-900 mb-3">I am a...</label>
+        <div className="flex gap-4">
+          <label className="flex items-center cursor-pointer">
+            <input
+              type="radio"
+              name="login_role"
+              value="patient"
+              checked={role === 'patient'}
+              onChange={(event) => setRole(event.target.value)}
+              className="w-4 h-4 text-navy-600"
+            />
+            <span className="ml-2 text-slate-700">Patient</span>
+          </label>
+          <label className="flex items-center cursor-pointer">
+            <input
+              type="radio"
+              name="login_role"
+              value="doctor"
+              checked={role === 'doctor'}
+              onChange={(event) => setRole(event.target.value)}
+              className="w-4 h-4 text-navy-600"
+            />
+            <span className="ml-2 text-slate-700">Doctor</span>
+          </label>
+        </div>
+      </div>
+
       <div>
         <label className="block text-sm font-medium text-navy-900 mb-2">Email Address</label>
         <input
