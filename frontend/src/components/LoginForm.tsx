@@ -1,12 +1,14 @@
 import { FormEvent, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { login, loginDoctor } from '../services/auth'
+import { useToast } from '../context/ToastContext'
 
 const LoginForm = () => {
   const [error, setError] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [role, setRole] = useState('patient')
   const navigate = useNavigate()
+  const { showError, showSuccess } = useToast()
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -27,12 +29,15 @@ const LoginForm = () => {
       
       // Route based on user role (extracted from JWT token)
       if (user.role === 'doctor') {
+        showSuccess('Login successful')
         navigate('/dashboard/doctor')
       } else {
+        showSuccess('Login successful')
         navigate('/dashboard')
       }
     } catch {
       setError('Invalid credentials')
+      showError('Invalid credentials')
     } finally {
       setIsSubmitting(false)
     }

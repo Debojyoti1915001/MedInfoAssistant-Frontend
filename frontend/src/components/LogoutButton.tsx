@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { getSession, logout } from '../services/auth'
 import { User } from '../types/user'
+import { useToast } from '../context/ToastContext'
 
 const LogoutButton = () => {
   const [session, setSession] = useState<User | null>(null)
-  const navigate = useNavigate()
+  const { showSuccess, showError } = useToast()
 
   useEffect(() => {
     getSession().then((user) => {
@@ -14,10 +14,14 @@ const LogoutButton = () => {
   }, [])
 
   const handleLogout = async () => {
-    await logout()
-    // Clear session and redirect
-    setSession(null)
-    window.location.href = '/login'
+    try {
+      await logout()
+      setSession(null)
+      showSuccess('Logged out successfully')
+      window.location.href = '/login'
+    } catch {
+      showError('Logout failed. Please try again.')
+    }
   }
 
   return (

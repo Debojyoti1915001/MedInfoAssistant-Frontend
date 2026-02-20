@@ -3,6 +3,7 @@ import { getSession } from '../services/auth'
 import { getPatientPrescriptions, submitPrescription, downloadPrescriptionFile } from '../services/prescription'
 import { Prescription } from '../types/prescription'
 import { User } from '../types/user'
+import { useToast } from '../context/ToastContext'
 
 export default function PatientDashboard() {
   const [user, setUser] = useState<User | null>(null)
@@ -15,6 +16,7 @@ export default function PatientDashboard() {
   const [symptoms, setSymptoms] = useState('')
   const [doctorUsername, setDoctorUsername] = useState('')
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const { showError, showSuccess } = useToast()
   const displayName = user?.name || user?.username || user?.email?.split('@')[0] || 'User'
   const userDetails = [
     { label: 'ID', value: user?.id },
@@ -60,17 +62,20 @@ export default function PatientDashboard() {
 
     if (!user) {
       setUploadError('User not authenticated')
+      showError('User not authenticated')
       return
     }
 
     const fileInput = fileInputRef.current
     if (!fileInput?.files?.[0]) {
       setUploadError('Please select a file')
+      showError('Please select a file')
       return
     }
 
     if (!doctorUsername.trim()) {
       setUploadError('Please enter a doctor username')
+      showError('Please enter a doctor username')
       return
     }
 
@@ -80,16 +85,19 @@ export default function PatientDashboard() {
 
     if (!allowedTypes.includes(file.type)) {
       setUploadError('Only jpg, png, gif, webp, bmp, and svg files are allowed')
+      showError('Only jpg, png, gif, webp, bmp, and svg files are allowed')
       return
     }
 
     if (file.size > maxSize) {
       setUploadError('File size must be less than 10 MB')
+      showError('File size must be less than 10 MB')
       return
     }
 
     if (!symptoms.trim()) {
       setUploadError('Please describe your symptoms')
+      showError('Please describe your symptoms')
       return
     }
 
@@ -102,10 +110,13 @@ export default function PatientDashboard() {
       setDoctorUsername('')
       if (fileInput) fileInput.value = ''
       setUploadSuccess(true)
+      showSuccess('Prescription uploaded successfully')
       setIsUploadModalOpen(false)
       setTimeout(() => setUploadSuccess(false), 3000)
     } catch (error) {
-      setUploadError(error instanceof Error ? error.message : 'Failed to upload prescription')
+      const message = error instanceof Error ? error.message : 'Failed to upload prescription'
+      setUploadError(message)
+      showError(message)
     } finally {
       setIsUploading(false)
     }

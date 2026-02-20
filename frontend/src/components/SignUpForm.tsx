@@ -1,12 +1,14 @@
 import { FormEvent, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { signupPatient, signupDoctor } from '../services/auth'
+import { useToast } from '../context/ToastContext'
 
 const SignUpForm = () => {
   const [role, setRole] = useState('')
   const [error, setError] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const navigate = useNavigate()
+  const { showError, showSuccess } = useToast()
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -23,6 +25,7 @@ const SignUpForm = () => {
     // Validate passwords match
     if (password !== confirmPassword) {
       setError('Passwords do not match')
+      showError('Passwords do not match')
       setIsSubmitting(false)
       return
     }
@@ -30,6 +33,7 @@ const SignUpForm = () => {
     // Validate role is selected
     if (!role) {
       setError('Please select a role')
+      showError('Please select a role')
       setIsSubmitting(false)
       return
     }
@@ -37,15 +41,19 @@ const SignUpForm = () => {
     try {
       if (role === 'patient') {
         await signupPatient(name, email, phnNumber, password)
+        showSuccess('Account created successfully')
         navigate('/login')
       } else if (role === 'doctor') {
         const speciality = String(formData.get('speciality') ?? '')
         const username = name.toLowerCase().replace(/\s+/g, '_')
         await signupDoctor(name, email, phnNumber, speciality, username, password)
+        showSuccess('Account created successfully')
         navigate('/login')
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Signup failed')
+      const message = err instanceof Error ? err.message : 'Signup failed'
+      setError(message)
+      showError(message)
     } finally {
       setIsSubmitting(false)
     }
