@@ -1,5 +1,13 @@
 import { User } from '../types/user'
-import { decodeToken, setTokenCookie, getTokenFromCookie, removeTokenCookie } from '../utils/jwt'
+import {
+  decodeToken,
+  setTokenCookie,
+  setUserCookie,
+  getTokenFromCookie,
+  getUserFromCookie,
+  removeTokenCookie,
+  removeUserCookie,
+} from '../utils/jwt'
 
 // const API_URL = 'http://localhost:8080'
 const API_URL = 'https://medinfoassistant-backend.onrender.com'
@@ -77,6 +85,8 @@ export const login = async (email: string, password: string): Promise<User> => {
     }
     // Store token in cookie
     setTokenCookie(data.token)
+    // Store full login response in cookie for profile/session usage
+    setUserCookie(data)
   }
 
   return data
@@ -107,6 +117,8 @@ export const loginDoctor = async (email: string, password: string): Promise<User
     }
     // Store token in cookie
     setTokenCookie(data.token)
+    // Store full login response in cookie for profile/session usage
+    setUserCookie(data)
   }
 
   return data
@@ -129,17 +141,29 @@ export const getSession = async (): Promise<User | null> => {
   // Check if token is expired
   if (decoded.exp * 1000 < Date.now()) {
     removeTokenCookie()
+    removeUserCookie()
     return null
   }
 
+  const cookieUser = getUserFromCookie()
+
   return {
-    id: decoded.id,
-    email: decoded.email,
+    id: cookieUser?.id ?? decoded.id,
+    name: cookieUser?.name ?? decoded.name,
+    email: cookieUser?.email ?? decoded.email,
+    phnNumber: cookieUser?.phnNumber ?? decoded.phnNumber,
+    speciality: cookieUser?.speciality ?? decoded.speciality,
+    username: cookieUser?.username ?? decoded.username,
+    accuracy: cookieUser?.accuracy ?? decoded.accuracy,
+    createdAt: cookieUser?.createdAt ?? decoded.createdAt,
     token: token,
-    role: decoded.role === 'user' ? 'patient' : (decoded.role as any),
+    role:
+      (cookieUser?.role as User['role']) ??
+      (decoded.role === 'user' ? 'patient' : (decoded.role as any)),
   } as User
 }
 
 export const logout = async (): Promise<void> => {
   removeTokenCookie()
+  removeUserCookie()
 }

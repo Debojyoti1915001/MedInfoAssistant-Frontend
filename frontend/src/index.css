@@ -19,3 +19,20 @@ body {
 a {
   @apply text-navy-600 hover:text-navy-700 transition-colors;
 }
+
+.preloader-char {
+  opacity: 0;
+  transform: translateY(10px);
+  animation: preloader-reveal 0.45s ease forwards;
+}
+
+@keyframes preloader-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

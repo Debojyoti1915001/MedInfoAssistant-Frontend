@@ -11,9 +11,28 @@ export default function PatientDashboard() {
   const [isUploading, setIsUploading] = useState(false)
   const [uploadError, setUploadError] = useState('')
   const [uploadSuccess, setUploadSuccess] = useState(false)
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false)
   const [symptoms, setSymptoms] = useState('')
   const [doctorUsername, setDoctorUsername] = useState('')
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const displayName = user?.name || user?.username || user?.email?.split('@')[0] || 'User'
+  const userDetails = [
+    { label: 'ID', value: user?.id },
+    { label: 'Name', value: user?.name },
+    { label: 'Email', value: user?.email },
+    { label: 'Username', value: user?.username },
+    { label: 'Phone', value: user?.phnNumber },
+    { label: 'Role', value: user?.role },
+    { label: 'Speciality', value: user?.speciality },
+    {
+      label: 'Accuracy',
+      value: typeof user?.accuracy === 'number' ? `${user.accuracy}%` : undefined,
+    },
+    {
+      label: 'Created At',
+      value: user?.createdAt ? new Date(user.createdAt).toLocaleString() : undefined,
+    },
+  ].filter((item) => item.value !== undefined && item.value !== null && String(item.value).trim() !== '')
 
   useEffect(() => {
     const fetchData = async () => {
@@ -83,6 +102,7 @@ export default function PatientDashboard() {
       setDoctorUsername('')
       if (fileInput) fileInput.value = ''
       setUploadSuccess(true)
+      setIsUploadModalOpen(false)
       setTimeout(() => setUploadSuccess(false), 3000)
     } catch (error) {
       setUploadError(error instanceof Error ? error.message : 'Failed to upload prescription')
@@ -98,8 +118,29 @@ export default function PatientDashboard() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-navy-900 mb-2">Welcome, {user?.name}!</h1>
+        <h1 className="text-3xl font-bold text-navy-900 mb-2">Welcome, {displayName}!</h1>
         <p className="text-slate-600">Manage your health and connect with doctors</p>
+        <div className="mt-4 bg-white border border-slate-200 rounded-lg p-4">
+          <h2 className="text-lg font-semibold text-navy-900 mb-3">User Details</h2>
+          {userDetails.length === 0 ? (
+            <p className="text-slate-500 text-sm">No profile details available.</p>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 text-sm">
+              {userDetails.map((detail) => (
+                <div key={detail.label} className="bg-slate-50 rounded-md p-3">
+                  <p className="text-slate-500">{detail.label}</p>
+                  <p
+                    className={`text-navy-900 font-medium ${
+                      detail.label === 'Email' ? 'break-all' : ''
+                    }`}
+                  >
+                    {String(detail.value)}
+                  </p>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -112,65 +153,26 @@ export default function PatientDashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-white border border-slate-200 rounded-lg p-6">
           <h2 className="text-xl font-bold text-navy-900 mb-4">Upload Prescription</h2>
-          <form onSubmit={handleFileUpload} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-navy-900 mb-2">Doctor Username</label>
-              <input
-                type="text"
-                value={doctorUsername}
-                onChange={(e) => setDoctorUsername(e.target.value)}
-                placeholder="Enter doctor's username"
-                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-navy-600 focus:border-transparent"
-                required
-              />
+          <p className="text-slate-600 mb-4">
+            Open the upload form in a modal to submit a new prescription.
+          </p>
+          <button
+            type="button"
+            onClick={() => {
+              setUploadError('')
+              setUploadSuccess(false)
+              setIsUploadModalOpen(true)
+            }}
+            className="w-full bg-navy-600 text-white py-2 rounded-lg hover:bg-navy-700 transition-colors font-medium"
+          >
+            Open Upload Form
+          </button>
+
+          {uploadSuccess && (
+            <div className="mt-4 p-3 bg-green-50 border border-green-200 text-green-600 rounded-lg text-sm">
+              Prescription uploaded successfully!
             </div>
-
-            <div>
-              <label className="block text-sm font-medium text-navy-900 mb-2">Select File</label>
-              <input
-                type="file"
-                ref={fileInputRef}
-                accept=".jpg,.jpeg,.png,.gif,.webp,.bmp,.svg"
-                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-navy-600 focus:border-transparent"
-                required
-              />
-              <p className="text-xs text-slate-500 mt-1">
-                Allowed: jpg, png, gif, webp, bmp, svg (Max 10 MB)
-              </p>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-navy-900 mb-2">Symptoms</label>
-              <textarea
-                value={symptoms}
-                onChange={(e) => setSymptoms(e.target.value)}
-                placeholder="Describe your symptoms..."
-                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-navy-600 focus:border-transparent"
-                rows={4}
-                required
-              />
-            </div>
-
-            {uploadError && (
-              <div className="p-3 bg-red-50 border border-red-200 text-red-600 rounded-lg text-sm">
-                {uploadError}
-              </div>
-            )}
-
-            {uploadSuccess && (
-              <div className="p-3 bg-green-50 border border-green-200 text-green-600 rounded-lg text-sm">
-                Prescription uploaded successfully!
-              </div>
-            )}
-
-            <button
-              type="submit"
-              disabled={isUploading}
-              className="w-full bg-navy-600 text-white py-2 rounded-lg hover:bg-navy-700 transition-colors font-medium disabled:opacity-70"
-            >
-              {isUploading ? 'Uploading...' : 'Upload Prescription'}
-            </button>
-          </form>
+          )}
         </div>
 
         <div className="bg-white border border-slate-200 rounded-lg p-6">
@@ -188,6 +190,84 @@ export default function PatientDashboard() {
           </div>
         </div>
       </div>
+
+      {isUploadModalOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4"
+          onClick={() => setIsUploadModalOpen(false)}
+        >
+          <div
+            className="w-full max-w-2xl bg-white border border-slate-200 rounded-lg p-6"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-bold text-navy-900">Upload Prescription</h2>
+              <button
+                type="button"
+                onClick={() => setIsUploadModalOpen(false)}
+                className="text-slate-500 hover:text-slate-700 text-2xl leading-none"
+                aria-label="Close upload modal"
+              >
+                ×
+              </button>
+            </div>
+
+            <form onSubmit={handleFileUpload} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-navy-900 mb-2">Doctor Username</label>
+                <input
+                  type="text"
+                  value={doctorUsername}
+                  onChange={(e) => setDoctorUsername(e.target.value)}
+                  placeholder="Enter doctor's username"
+                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-navy-600 focus:border-transparent"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-navy-900 mb-2">Select File</label>
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  accept=".jpg,.jpeg,.png,.gif,.webp,.bmp,.svg"
+                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-navy-600 focus:border-transparent"
+                  required
+                />
+                <p className="text-xs text-slate-500 mt-1">
+                  Allowed: jpg, png, gif, webp, bmp, svg (Max 10 MB)
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-navy-900 mb-2">Symptoms</label>
+                <textarea
+                  value={symptoms}
+                  onChange={(e) => setSymptoms(e.target.value)}
+                  placeholder="Describe your symptoms..."
+                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-navy-600 focus:border-transparent"
+                  rows={4}
+                  required
+                />
+              </div>
+
+              {uploadError && (
+                <div className="p-3 bg-red-50 border border-red-200 text-red-600 rounded-lg text-sm">
+                  {uploadError}
+                </div>
+              )}
+
+              <button
+                type="submit"
+                disabled={isUploading}
+                className="w-full bg-navy-600 text-white py-2 rounded-lg hover:bg-navy-700 transition-colors font-medium disabled:opacity-70"
+              >
+                {isUploading ? 'Uploading...' : 'Upload Prescription'}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
 
       <div className="bg-white border border-slate-200 rounded-lg p-6">
         <h2 className="text-xl font-bold text-navy-900 mb-4">Recent Prescriptions</h2>

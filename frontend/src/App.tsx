@@ -1,4 +1,6 @@
+import { useEffect, useState } from 'react'
 import { Navigate, Route, Routes } from 'react-router-dom'
+import Preloader from './components/Preloader'
 import DashboardLayout from './layouts/DashboardLayout'
 import AboutPage from './pages/AboutPage'
 import DashboardPage from './pages/DashboardPage'
@@ -7,6 +9,17 @@ import LoginPage from './pages/LoginPage'
 import SignupPage from './pages/SignupPage'
 
 function App() {
+  const [isPreloading, setIsPreloading] = useState(true)
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => setIsPreloading(false), 1700)
+    return () => window.clearTimeout(timer)
+  }, [])
+
+  if (isPreloading) {
+    return <Preloader />
+  }
+
   return (
     <Routes>
       <Route path="/" element={<HomePage />} />
