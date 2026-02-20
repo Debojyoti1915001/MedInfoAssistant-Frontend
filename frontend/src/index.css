@@ -36,3 +36,93 @@ a {
     transform: translateY(0);
   }
 }
+
+.animate-page-in {
+  animation: page-in 0.5s ease both;
+}
+
+.animate-rise {
+  animation: rise-in 0.45s ease both;
+}
+
+.animate-stagger-1 {
+  animation-delay: 0.08s;
+}
+
+.animate-stagger-2 {
+  animation-delay: 0.16s;
+}
+
+.animate-stagger-3 {
+  animation-delay: 0.24s;
+}
+
+.animate-hover-lift {
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.animate-hover-lift:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.12);
+}
+
+.animate-press {
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.animate-press:hover {
+  transform: translateY(-1px);
+}
+
+.animate-press:active {
+  transform: translateY(1px) scale(0.99);
+}
+
+.animate-modal-in {
+  animation: modal-in 0.25s ease both;
+}
+
+@keyframes page-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes modal-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .preloader-char,
+  .animate-page-in,
+  .animate-rise,
+  .animate-modal-in {
+    animation: none !important;
+  }
+
+  .animate-hover-lift,
+  .animate-press {
+    transition: none !important;
+  }
+}

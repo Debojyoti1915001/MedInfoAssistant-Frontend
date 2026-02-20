@@ -6,20 +6,20 @@ export default function HomePage() {
     <div className="min-h-screen bg-white">
       <Header />
 
-      <section className="bg-gradient-to-br from-navy-50 to-slate-50 py-20 px-4 sm:px-6 lg:px-8">
+      <section className="bg-gradient-to-br from-navy-50 to-slate-50 py-20 px-4 sm:px-6 lg:px-8 animate-page-in">
         <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-navy-900 mb-6">
+          <h2 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-navy-900 mb-6 animate-rise">
             Seamless Healthcare Communication
           </h2>
-          <p className="text-lg sm:text-xl text-slate-600 mb-8 max-w-2xl mx-auto">
+          <p className="text-lg sm:text-xl text-slate-600 mb-8 max-w-2xl mx-auto animate-rise animate-stagger-1">
             Connect patients and doctors through a secure, minimalist platform. Access medical services
             anytime, anywhere.
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <button className="px-8 py-3 bg-navy-600 text-white rounded-lg hover:bg-navy-700 transition-colors font-medium">
+          <div className="flex flex-col sm:flex-row gap-4 justify-center animate-rise animate-stagger-2">
+            <button className="px-8 py-3 bg-navy-600 text-white rounded-lg hover:bg-navy-700 transition-colors font-medium animate-press">
               Get Started
             </button>
-            <button className="px-8 py-3 border-2 border-navy-600 text-navy-600 rounded-lg hover:bg-navy-50 transition-colors font-medium">
+            <button className="px-8 py-3 border-2 border-navy-600 text-navy-600 rounded-lg hover:bg-navy-50 transition-colors font-medium animate-press">
               Learn More
             </button>
           </div>

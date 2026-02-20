@@ -127,11 +127,11 @@ export default function PatientDashboard() {
   }
 
   return (
-    <div className="space-y-6">
-      <div>
+    <div className="space-y-6 animate-page-in">
+      <div className="animate-rise">
         <h1 className="text-3xl font-bold text-navy-900 mb-2">Welcome, {displayName}!</h1>
         <p className="text-slate-600">Manage your health and connect with doctors</p>
-        <div className="mt-4 bg-white border border-slate-200 rounded-lg p-4">
+        <div className="mt-4 bg-white border border-slate-200 rounded-lg p-4 animate-rise animate-stagger-1">
           <h2 className="text-lg font-semibold text-navy-900 mb-3">User Details</h2>
           {userDetails.length === 0 ? (
             <p className="text-slate-500 text-sm">No profile details available.</p>
@@ -155,14 +155,14 @@ export default function PatientDashboard() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-white border border-slate-200 rounded-lg p-6 hover:shadow-md transition-shadow">
+        <div className="bg-white border border-slate-200 rounded-lg p-6 hover:shadow-md transition-shadow animate-rise animate-stagger-2 animate-hover-lift">
           <div className="text-3xl font-bold text-navy-600">{prescriptions.length}</div>
           <p className="text-slate-600 text-sm mt-2">Active Prescriptions</p>
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white border border-slate-200 rounded-lg p-6">
+        <div className="bg-white border border-slate-200 rounded-lg p-6 animate-rise animate-stagger-2 animate-hover-lift">
           <h2 className="text-xl font-bold text-navy-900 mb-4">Upload Prescription</h2>
           <p className="text-slate-600 mb-4">
             Open the upload form in a modal to submit a new prescription.
@@ -174,7 +174,7 @@ export default function PatientDashboard() {
               setUploadSuccess(false)
               setIsUploadModalOpen(true)
             }}
-            className="w-full bg-navy-600 text-white py-2 rounded-lg hover:bg-navy-700 transition-colors font-medium"
+            className="w-full bg-navy-600 text-white py-2 rounded-lg hover:bg-navy-700 transition-colors font-medium animate-press"
           >
             Open Upload Form
           </button>
@@ -186,7 +186,7 @@ export default function PatientDashboard() {
           )}
         </div>
 
-        <div className="bg-white border border-slate-200 rounded-lg p-6">
+        <div className="bg-white border border-slate-200 rounded-lg p-6 animate-rise animate-stagger-3 animate-hover-lift">
           <h2 className="text-xl font-bold text-navy-900 mb-4">Quick Actions</h2>
           <div className="space-y-2">
             <button className="w-full text-left px-4 py-3 bg-slate-50 hover:bg-slate-100 rounded-lg transition-colors text-navy-900 font-medium">
@@ -208,7 +208,7 @@ export default function PatientDashboard() {
           onClick={() => setIsUploadModalOpen(false)}
         >
           <div
-            className="w-full max-w-2xl bg-white border border-slate-200 rounded-lg p-6"
+            className="w-full max-w-2xl bg-white border border-slate-200 rounded-lg p-6 animate-modal-in"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between mb-4">
@@ -271,7 +271,7 @@ export default function PatientDashboard() {
               <button
                 type="submit"
                 disabled={isUploading}
-                className="w-full bg-navy-600 text-white py-2 rounded-lg hover:bg-navy-700 transition-colors font-medium disabled:opacity-70"
+                className="w-full bg-navy-600 text-white py-2 rounded-lg hover:bg-navy-700 transition-colors font-medium disabled:opacity-70 animate-press"
               >
                 {isUploading ? 'Uploading...' : 'Upload Prescription'}
               </button>
@@ -280,7 +280,7 @@ export default function PatientDashboard() {
         </div>
       )}
 
-      <div className="bg-white border border-slate-200 rounded-lg p-6">
+      <div className="bg-white border border-slate-200 rounded-lg p-6 animate-rise animate-stagger-3">
         <h2 className="text-xl font-bold text-navy-900 mb-4">Recent Prescriptions</h2>
         {prescriptions.length === 0 ? (
           <div className="text-center py-8">
