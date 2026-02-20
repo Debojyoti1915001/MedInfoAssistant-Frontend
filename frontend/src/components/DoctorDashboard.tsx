@@ -85,24 +85,24 @@ export default function DoctorDashboard() {
   const approvedPrescriptions = prescriptions.filter((p) => p.status === 'approved')
 
   return (
-    <div className="space-y-6">
-      <div>
+    <div className="space-y-6 animate-page-in">
+      <div className="animate-rise">
         <h1 className="text-3xl font-bold text-navy-900 mb-2">Welcome, Dr. {user?.name}!</h1>
         <p className="text-slate-600">Review and manage prescription approvals</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="bg-white border border-slate-200 rounded-lg p-6 hover:shadow-md transition-shadow">
+        <div className="bg-white border border-slate-200 rounded-lg p-6 hover:shadow-md transition-shadow animate-rise animate-stagger-1 animate-hover-lift">
           <div className="text-3xl font-bold text-yellow-600">{pendingPrescriptions.length}</div>
           <p className="text-slate-600 text-sm mt-2">Pending Reviews</p>
         </div>
-        <div className="bg-white border border-slate-200 rounded-lg p-6 hover:shadow-md transition-shadow">
+        <div className="bg-white border border-slate-200 rounded-lg p-6 hover:shadow-md transition-shadow animate-rise animate-stagger-2 animate-hover-lift">
           <div className="text-3xl font-bold text-green-600">{approvedPrescriptions.length}</div>
           <p className="text-slate-600 text-sm mt-2">Approved</p>
         </div>
       </div>
 
-      <div className="bg-white border border-slate-200 rounded-lg p-6">
+      <div className="bg-white border border-slate-200 rounded-lg p-6 animate-rise animate-stagger-2">
         <h2 className="text-xl font-bold text-navy-900 mb-4">Pending Prescriptions</h2>
         {pendingPrescriptions.length === 0 ? (
           <div className="text-center py-8">
@@ -133,7 +133,7 @@ export default function DoctorDashboard() {
                       <button
                         onClick={() => handleViewPrescription(prescription)}
                         disabled={isDetailsLoading}
-                        className="px-3 py-1 bg-navy-600 text-white rounded text-sm hover:bg-navy-700 transition-colors disabled:opacity-70"
+                        className="px-3 py-1 bg-navy-600 text-white rounded text-sm hover:bg-navy-700 transition-colors disabled:opacity-70 animate-press"
                       >
                         {isDetailsLoading ? 'Loading...' : 'Review'}
                       </button>
@@ -147,7 +147,7 @@ export default function DoctorDashboard() {
       </div>
 
       {approvedPrescriptions.length > 0 && (
-        <div className="bg-white border border-slate-200 rounded-lg p-6">
+        <div className="bg-white border border-slate-200 rounded-lg p-6 animate-rise animate-stagger-3">
           <h2 className="text-xl font-bold text-navy-900 mb-4">Approved Prescriptions</h2>
           <div className="overflow-x-auto">
             <table className="w-full">
