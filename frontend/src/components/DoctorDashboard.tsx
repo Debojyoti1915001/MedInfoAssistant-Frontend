@@ -12,7 +12,7 @@ import { User } from '../types/user'
 
 interface PrescriptionWithItems extends Prescription {
   items?: PrescriptionItem[]
-  aiAnalysis?: any
+  aiAnalysis?: unknown
 }
 
 export default function DoctorDashboard() {
@@ -47,8 +47,8 @@ export default function DoctorDashboard() {
       const details = await getPrescriptionDetails(prescription.id)
       setSelectedPrescription({
         ...prescription,
-        items: details.items || [],
-        aiAnalysis: details.aiAnalysis,
+        items: details.items.length > 0 ? details.items : prescription.items || [],
+        aiAnalysis: details.aiAnalysis ?? prescription.aiAnalysis ?? null,
       })
     } catch (error) {
       console.error('Error fetching prescription details:', error)
