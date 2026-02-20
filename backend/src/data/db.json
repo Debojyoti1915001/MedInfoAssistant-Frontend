@@ -1,0 +1,92 @@
+{
+  "patients": [
+    {
+      "id": 1,
+      "name": "John Doe",
+      "age": 30,
+      "gender": "male",
+      "condition": "Diabetes",
+      "email": "shristisarma923@gmail.com",
+      "password": "123"
+    },
+    {
+      "id": 2,
+      "name": "Jane Smith",
+      "age": 25,
+      "gender": "female",
+      "condition": "Hypertension",
+      "email": "jane.smith@example.com",
+      "password": "password456"
+    }
+  ],
+  "doctors": [
+    {
+      "id": 1,
+      "name": "Dr. Alice Johnson",
+      "speciality": "Cardiology",
+      "email": "alice.johnson@hospital.com",
+      "password": "doctor123"
+    },
+    {
+      "id": 2,
+      "name": "Dr. Bob Brown",
+      "speciality": "Endocrinology",
+      "email": "bob.brown@hospital.com",
+      "password": "doctor456"
+    }
+  ],
+  "prescriptions": [
+    {
+      "_presId": "550e8400-e29b-41d4-a716-446655440001",
+      "doc": "1",
+      "patientId": "1",
+      "symptoms": "Severe headache, dizziness, and blurred vision for the past 3 days",
+      "createdDate": "2026-02-10T10:30:00Z",
+      "file": {
+        "name": "medical_report.pdf",
+        "path": "/uploads/medical_report.pdf",
+        "mimetype": "application/pdf",
+        "size": 2048000
+      }
+    },
+    {
+      "_presId": "550e8400-e29b-41d4-a716-446655440002",
+      "doc": "1",
+      "patientId": "1",
+      "symptoms": "High blood pressure reading, fatigue",
+      "createdDate": "2026-02-08T14:15:00Z",
+      "file": {
+        "name": "blood_pressure_log.txt",
+        "path": "/uploads/blood_pressure_log.txt",
+        "mimetype": "text/plain",
+        "size": 512000
+      }
+    },
+    {
+      "_presId": "cef058e9-6c3b-401a-883d-ad9aae09dd98",
+      "doc": "1",
+      "patientId": "1",
+      "symptoms": "aadhar card",
+      "createdDate": "2026-02-15T09:25:08.073Z",
+      "file": {
+        "name": "back aadhar card.jpeg",
+        "path": "/uploads/8052e1ba-d50e-495e-901d-d5003a76fba0-back aadhar card.jpeg",
+        "mimetype": "image/jpeg",
+        "size": 1026989
+      }
+    },
+    {
+      "_presId": "b0e05ee5-ea38-4a97-9da3-f5c81d9288d7",
+      "doc": "1",
+      "patientId": "1",
+      "symptoms": "something",
+      "createdDate": "2026-02-18T19:24:23.184Z",
+      "file": {
+        "name": "133630886925268313.jpg",
+        "path": "/uploads/155bd91a-8942-49b4-9b26-fe588f491ae6-133630886925268313.jpg",
+        "mimetype": "image/jpeg",
+        "size": 1690881
+      }
+    }
+  ]
+}
