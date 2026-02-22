@@ -150,3 +150,9 @@ export const updateItemReason = async (itemId: number, docReason: string): Promi
     throw new Error(error || 'Failed to update item reason')
   }
 }
+
+export const updateItemReasons = async (items: Array<Pick<PrescriptionItem, 'id' | 'docReason'>>): Promise<void> => {
+  for (const item of items) {
+    await updateItemReason(item.id, item.docReason)
+  }
+}

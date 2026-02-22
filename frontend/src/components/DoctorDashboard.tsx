@@ -3,7 +3,7 @@ import { getSession } from '../services/auth'
 import {
   getDoctorPrescriptions,
   getPrescriptionDetails,
-  updateItemReason,
+  updateItemReasons,
   Prescription,
   PrescriptionItem,
 } from '../services/doctor_prescription'
@@ -62,9 +62,7 @@ export default function DoctorDashboard() {
 
     try {
       // Update all items with doctor's reasons
-      for (const item of itemsWithReasons) {
-        await updateItemReason(item.id, item.docReason)
-      }
+      await updateItemReasons(itemsWithReasons)
 
       // Update prescription status
       setPrescriptions((current) =>

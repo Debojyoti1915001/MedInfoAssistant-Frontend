@@ -343,31 +343,54 @@ export default function PrescriptionApprovalModal({
 
   const handleSelectReasonChange = (itemId: number, selectedReason: string) => {
     setItems((currentItems) =>
-      currentItems.map((item) => (item.id === itemId ? { ...item, selectedReason } : item)),
+      currentItems.map((item) =>
+        item.id === itemId
+          ? {
+              ...item,
+              selectedReason,
+              customReason: selectedReason.trim() ? '' : item.customReason,
+            }
+          : item,
+      ),
     )
   }
 
   const handleCustomReasonChange = (itemId: number, customReason: string) => {
     setItems((currentItems) =>
-      currentItems.map((item) => (item.id === itemId ? { ...item, customReason } : item)),
+      currentItems.map((item) =>
+        item.id === itemId
+          ? {
+              ...item,
+              customReason,
+              selectedReason: customReason.trim() ? '' : item.selectedReason,
+            }
+          : item,
+      ),
     )
   }
 
   const handleApprove = async () => {
     setError('')
 
-    const itemsMissingAISelection = items.filter((item) => {
-      const options = reasonOptionsByItemId.get(item.id) || []
-      return options.length > 0 && !item.selectedReason.trim()
-    })
-    if (itemsMissingAISelection.length > 0) {
-      setError(`Please select an AI reason for: ${itemsMissingAISelection.map((item) => item.name).join(', ')}`)
+    const itemsWithoutAnyReason = items.filter(
+      (item) => !item.selectedReason.trim() && !item.customReason.trim(),
+    )
+    if (itemsWithoutAnyReason.length > 0) {
+      setError(
+        `Please select an AI reason or write your own reason for: ${itemsWithoutAnyReason
+          .map((item) => item.name)
+          .join(', ')}`,
+      )
       return
     }
 
-    const itemsWithoutCustomReason = items.filter((item) => !item.customReason.trim())
-    if (itemsWithoutCustomReason.length > 0) {
-      setError(`Please write your own reason for: ${itemsWithoutCustomReason.map((item) => item.name).join(', ')}`)
+    const itemsWithBothReasons = items.filter((item) => item.selectedReason.trim() && item.customReason.trim())
+    if (itemsWithBothReasons.length > 0) {
+      setError(
+        `Please provide only one reason source (AI or custom) for: ${itemsWithBothReasons
+          .map((item) => item.name)
+          .join(', ')}`,
+      )
       return
     }
 
@@ -386,6 +409,12 @@ export default function PrescriptionApprovalModal({
       setIsSubmitting(false)
     }
   }
+
+  const canApprove = items.every((item) => {
+    const hasSelectedReason = Boolean(item.selectedReason.trim())
+    const hasCustomReason = Boolean(item.customReason.trim())
+    return hasSelectedReason !== hasCustomReason
+  })
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -484,7 +513,7 @@ export default function PrescriptionApprovalModal({
                         rows={3}
                       />
                       <p className="mt-1 text-xs text-slate-500">
-                        Selected AI reason and this note are saved together in `docReason`.
+                        Choose either an AI reason or your own reason for this item.
                       </p>
                     </div>
                   </div>
@@ -498,17 +527,19 @@ export default function PrescriptionApprovalModal({
           )}
 
           <div className="flex gap-3 pt-4 border-t border-slate-200">
-            <button
-              onClick={handleApprove}
-              disabled={isSubmitting}
-              className="flex-1 bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 transition-colors font-medium disabled:opacity-70"
-            >
-              {isSubmitting ? 'Approving...' : 'Approve & Save'}
-            </button>
+            {canApprove && (
+              <button
+                onClick={handleApprove}
+                disabled={isSubmitting}
+                className="flex-1 bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 transition-colors font-medium disabled:opacity-70"
+              >
+                {isSubmitting ? 'Approving...' : 'Approve & Save'}
+              </button>
+            )}
             <button
               onClick={onClose}
               disabled={isSubmitting}
-              className="flex-1 bg-slate-300 text-slate-700 py-2 rounded-lg hover:bg-slate-400 transition-colors font-medium disabled:opacity-70"
+              className={`${canApprove ? 'flex-1' : 'w-full'} bg-slate-300 text-slate-700 py-2 rounded-lg hover:bg-slate-400 transition-colors font-medium disabled:opacity-70`}
             >
               Close
             </button>
