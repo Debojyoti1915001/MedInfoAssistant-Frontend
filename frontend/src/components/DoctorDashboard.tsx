@@ -20,7 +20,7 @@ export default function DoctorDashboard() {
   const [prescriptions, setPrescriptions] = useState<PrescriptionWithItems[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [selectedPrescription, setSelectedPrescription] = useState<PrescriptionWithItems | null>(null)
-  const [isDetailsLoading, setIsDetailsLoading] = useState(false)
+  const [loadingPrescriptionId, setLoadingPrescriptionId] = useState<number | null>(null)
 
   useEffect(() => {
     const fetchData = async () => {
@@ -42,7 +42,11 @@ export default function DoctorDashboard() {
   }, [])
 
   const handleViewPrescription = async (prescription: PrescriptionWithItems) => {
-    setIsDetailsLoading(true)
+    if (loadingPrescriptionId !== null) {
+      return
+    }
+
+    setLoadingPrescriptionId(prescription.id)
     try {
       const details = await getPrescriptionDetails(prescription.id)
       setSelectedPrescription({
@@ -53,7 +57,7 @@ export default function DoctorDashboard() {
     } catch (error) {
       console.error('Error fetching prescription details:', error)
     } finally {
-      setIsDetailsLoading(false)
+      setLoadingPrescriptionId(null)
     }
   }
 
@@ -130,10 +134,10 @@ export default function DoctorDashboard() {
                     <td className="py-3 px-4">
                       <button
                         onClick={() => handleViewPrescription(prescription)}
-                        disabled={isDetailsLoading}
+                        disabled={loadingPrescriptionId !== null}
                         className="px-3 py-1 bg-navy-600 text-white rounded text-sm hover:bg-navy-700 transition-colors disabled:opacity-70 animate-press"
                       >
-                        {isDetailsLoading ? 'Loading...' : 'Review'}
+                        {loadingPrescriptionId === prescription.id ? 'Loading...' : 'Review'}
                       </button>
                     </td>
                   </tr>
