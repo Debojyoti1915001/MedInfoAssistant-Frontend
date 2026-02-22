@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="MedInfo favicon">
+  <defs>
+    <linearGradient id="bg" x1="6" y1="6" x2="58" y2="58" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#1d5ea8" />
+      <stop offset="1" stop-color="#0f2f5a" />
+    </linearGradient>
+  </defs>
+  <rect x="2" y="2" width="60" height="60" rx="14" fill="url(#bg)" />
+  <circle cx="32" cy="34" r="16" fill="#f7fbff" />
+  <rect x="29" y="23" width="6" height="22" rx="2" fill="#164882" />
+  <rect x="21" y="31" width="22" height="6" rx="2" fill="#164882" />
+  <path
+    d="M46 11l1.8 4.3 4.2 1.7-4.2 1.8L46 23l-1.8-4.2L40 17l4.2-1.7L46 11z"
+    fill="#9de9ff"
+  />
+  <circle cx="14" cy="15" r="2" fill="#9de9ff" />
+</svg>
