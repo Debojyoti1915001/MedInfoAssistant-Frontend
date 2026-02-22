@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 
 interface Item {
   id: number
@@ -7,6 +7,11 @@ interface Item {
   aiReasons: string
   docReason: string
   presId: number
+}
+
+interface ReviewItem extends Item {
+  selectedReason: string
+  customReason: string
 }
 
 interface ReasonOption {
@@ -21,6 +26,11 @@ interface AIAnalysis {
   medicines?: Record<string, ReasonSource>
 }
 
+interface ParsedDocReason {
+  selectedReason: string
+  customReason: string
+}
+
 interface PrescriptionApprovalModalProps {
   prescription: {
     id: number
@@ -32,6 +42,9 @@ interface PrescriptionApprovalModalProps {
   onClose: () => void
   onApprove: (itemsWithReasons: Item[]) => Promise<void>
 }
+
+const AI_REASON_PREFIX = 'AI Reason:'
+const DOCTOR_REASON_PREFIX = 'Doctor Reason:'
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value)
@@ -208,59 +221,164 @@ const formatPrecision = (precision: number | null): string | null => {
   return `${rounded}%`
 }
 
+const parseStoredDocReason = (docReason: string, options: ReasonOption[]): ParsedDocReason => {
+  const text = (docReason || '').trim()
+  if (!text) {
+    return { selectedReason: '', customReason: '' }
+  }
+
+  const aiPrefixLower = AI_REASON_PREFIX.toLowerCase()
+  const doctorPrefixLower = DOCTOR_REASON_PREFIX.toLowerCase()
+  const lines = text
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean)
+
+  const hasLabeledLines = lines.some((line) => {
+    const lower = line.toLowerCase()
+    return lower.startsWith(aiPrefixLower) || lower.startsWith(doctorPrefixLower)
+  })
+
+  if (!hasLabeledLines) {
+    const matchedOption = options.find((option) => normalizeText(option.text) === normalizeText(text))
+    if (matchedOption) {
+      return { selectedReason: matchedOption.text, customReason: '' }
+    }
+
+    return { selectedReason: '', customReason: text }
+  }
+
+  let selectedReason = ''
+  const customReasonLines: string[] = []
+
+  for (const line of lines) {
+    const lower = line.toLowerCase()
+    if (lower.startsWith(aiPrefixLower)) {
+      const extracted = line.slice(AI_REASON_PREFIX.length).trim()
+      if (extracted) {
+        selectedReason = extracted
+      }
+      continue
+    }
+
+    if (lower.startsWith(doctorPrefixLower)) {
+      const extracted = line.slice(DOCTOR_REASON_PREFIX.length).trim()
+      if (extracted) {
+        customReasonLines.push(extracted)
+      }
+      continue
+    }
+
+    customReasonLines.push(line)
+  }
+
+  const matchedOption = options.find((option) => normalizeText(option.text) === normalizeText(selectedReason))
+  if (matchedOption) {
+    selectedReason = matchedOption.text
+  } else if (selectedReason) {
+    customReasonLines.unshift(selectedReason)
+    selectedReason = ''
+  }
+
+  return {
+    selectedReason,
+    customReason: customReasonLines.join('\n').trim(),
+  }
+}
+
+const buildConsolidatedDocReason = (selectedReason: string, customReason: string): string => {
+  const parts: string[] = []
+  const aiReason = selectedReason.trim()
+  const doctorReason = customReason.trim()
+
+  if (aiReason) {
+    parts.push(`${AI_REASON_PREFIX} ${aiReason}`)
+  }
+
+  if (doctorReason) {
+    parts.push(`${DOCTOR_REASON_PREFIX} ${doctorReason}`)
+  }
+
+  return parts.join('\n')
+}
+
 export default function PrescriptionApprovalModal({
   prescription,
   onClose,
   onApprove,
 }: PrescriptionApprovalModalProps) {
-  const [items, setItems] = useState<Item[]>(prescription.items || [])
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState('')
   const aiAnalysis = useMemo(() => parseAIAnalysis(prescription.aiAnalysis), [prescription.aiAnalysis])
   const reasonOptionsByItemId = useMemo(() => {
     const options = new Map<number, ReasonOption[]>()
 
-    for (const item of items) {
+    for (const item of prescription.items || []) {
       const parsedItemSource = parseAIReasonString(item.aiReasons || '')
       const analysisSource = findAnalysisReasonSource(item, aiAnalysis)
       options.set(item.id, mergeReasonOptions([parsedItemSource, analysisSource]))
     }
 
     return options
-  }, [aiAnalysis, items])
+  }, [aiAnalysis, prescription.items])
 
-  const handleReasonChange = (itemId: number, newReason: string) => {
+  const initialItems = useMemo<ReviewItem[]>(() => {
+    return (prescription.items || []).map((item) => {
+      const options = reasonOptionsByItemId.get(item.id) || []
+      const parsedDocReason = parseStoredDocReason(item.docReason || '', options)
+
+      return {
+        ...item,
+        selectedReason: parsedDocReason.selectedReason,
+        customReason: parsedDocReason.customReason,
+      }
+    })
+  }, [prescription.items, reasonOptionsByItemId])
+
+  const [items, setItems] = useState<ReviewItem[]>(initialItems)
+
+  useEffect(() => {
+    setItems(initialItems)
+  }, [initialItems])
+
+  const handleSelectReasonChange = (itemId: number, selectedReason: string) => {
     setItems((currentItems) =>
-      currentItems.map((item) => (item.id === itemId ? { ...item, docReason: newReason } : item)),
+      currentItems.map((item) => (item.id === itemId ? { ...item, selectedReason } : item)),
+    )
+  }
+
+  const handleCustomReasonChange = (itemId: number, customReason: string) => {
+    setItems((currentItems) =>
+      currentItems.map((item) => (item.id === itemId ? { ...item, customReason } : item)),
     )
   }
 
   const handleApprove = async () => {
     setError('')
 
-    const itemsWithoutReasons = items.filter((item) => !(item.docReason || '').trim())
-    if (itemsWithoutReasons.length > 0) {
-      setError(`Please provide reasons for: ${itemsWithoutReasons.map((i) => i.name).join(', ')}`)
-      return
-    }
-
-    const itemsWithInvalidSelections = items.filter((item) => {
+    const itemsMissingAISelection = items.filter((item) => {
       const options = reasonOptionsByItemId.get(item.id) || []
-      if (options.length === 0) {
-        return false
-      }
-
-      return !options.some((option) => option.text === item.docReason)
+      return options.length > 0 && !item.selectedReason.trim()
     })
-
-    if (itemsWithInvalidSelections.length > 0) {
-      setError(`Please select an AI reason for: ${itemsWithInvalidSelections.map((i) => i.name).join(', ')}`)
+    if (itemsMissingAISelection.length > 0) {
+      setError(`Please select an AI reason for: ${itemsMissingAISelection.map((item) => item.name).join(', ')}`)
       return
     }
+
+    const itemsWithoutCustomReason = items.filter((item) => !item.customReason.trim())
+    if (itemsWithoutCustomReason.length > 0) {
+      setError(`Please write your own reason for: ${itemsWithoutCustomReason.map((item) => item.name).join(', ')}`)
+      return
+    }
+
+    const itemsWithReasons: Item[] = items.map(({ selectedReason, customReason, ...item }) => ({
+      ...item,
+      docReason: buildConsolidatedDocReason(selectedReason, customReason),
+    }))
 
     setIsSubmitting(true)
     try {
-      await onApprove(items)
+      await onApprove(itemsWithReasons)
       onClose()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to approve prescription')
@@ -316,7 +434,7 @@ export default function PrescriptionApprovalModal({
                             <label
                               key={`${item.id}-${index}-${option.text}`}
                               className={`flex items-start justify-between gap-3 rounded-md px-3 py-2 border cursor-pointer ${
-                                item.docReason === option.text
+                                item.selectedReason === option.text
                                   ? 'border-blue-600 bg-white'
                                   : 'border-blue-100 bg-blue-50 hover:bg-white'
                               }`}
@@ -326,8 +444,8 @@ export default function PrescriptionApprovalModal({
                                   type="radio"
                                   name={`ai-reason-${item.id}`}
                                   value={option.text}
-                                  checked={item.docReason === option.text}
-                                  onChange={() => handleReasonChange(item.id, option.text)}
+                                  checked={item.selectedReason === option.text}
+                                  onChange={() => handleSelectReasonChange(item.id, option.text)}
                                   className="mt-1"
                                 />
                                 <span className="text-blue-900">{option.text}</span>
@@ -343,29 +461,32 @@ export default function PrescriptionApprovalModal({
                       </div>
                     ) : (
                       <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm text-amber-700">
-                        AI reasons are unavailable for this item. Please enter your own reason below.
+                        AI reasons are unavailable for this item. You can still add your own reason below.
                       </div>
                     )}
 
-                    {hasReasonOptions ? (
+                    {hasReasonOptions && (
                       <div className="text-sm text-slate-700">
-                        <span className="font-medium text-navy-900">Selected Reason: </span>
-                        {(item.docReason || '').trim() || 'Not selected'}
-                      </div>
-                    ) : (
-                      <div>
-                        <label className="block text-sm font-medium text-navy-900 mb-2">
-                          Your Reason / Notes for {item.name}
-                        </label>
-                        <textarea
-                          value={item.docReason}
-                          onChange={(e) => handleReasonChange(item.id, e.target.value)}
-                          placeholder={`Enter your professional opinion about this ${item.type === 'med' ? 'medicine' : 'test'}...`}
-                          className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-navy-600 focus:border-transparent text-sm"
-                          rows={3}
-                        />
+                        <span className="font-medium text-navy-900">Selected AI Reason: </span>
+                        {item.selectedReason.trim() || 'Not selected'}
                       </div>
                     )}
+
+                    <div>
+                      <label className="block text-sm font-medium text-navy-900 mb-2">
+                        Your Own Reason for {item.name}
+                      </label>
+                      <textarea
+                        value={item.customReason}
+                        onChange={(e) => handleCustomReasonChange(item.id, e.target.value)}
+                        placeholder={`Write your own reason for this ${item.type === 'med' ? 'medicine' : 'test'}...`}
+                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-navy-600 focus:border-transparent text-sm"
+                        rows={3}
+                      />
+                      <p className="mt-1 text-xs text-slate-500">
+                        Selected AI reason and this note are saved together in `docReason`.
+                      </p>
+                    </div>
                   </div>
                 )
               })}

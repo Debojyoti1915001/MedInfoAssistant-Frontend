@@ -1,13 +1,80 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { getSession } from '../services/auth'
-import { getPatientPrescriptions, submitPrescription, downloadPrescriptionFile } from '../services/prescription'
-import { Prescription } from '../types/prescription'
+import {
+  getPatientPrescriptions,
+  submitPrescription,
+  downloadPrescriptionFile,
+  updatePrescriptionSeenStatus,
+} from '../services/prescription'
+import { Prescription, PrescriptionItem } from '../types/prescription'
 import { User } from '../types/user'
 import { useToast } from '../context/ToastContext'
+
+const AI_REASON_PREFIX = 'AI Reason:'
+const DOCTOR_REASON_PREFIX = 'Doctor Reason:'
+
+interface ParsedRemark {
+  aiReason: string
+  doctorReason: string
+  raw: string
+}
+
+const getRemarkItems = (prescription: Prescription): PrescriptionItem[] => {
+  return (prescription.items || []).filter((item) => (item.docReason || '').trim().length > 0)
+}
+
+const parseDocReason = (docReason: string): ParsedRemark => {
+  const raw = (docReason || '').trim()
+  if (!raw) {
+    return {
+      aiReason: '',
+      doctorReason: '',
+      raw: '',
+    }
+  }
+
+  const aiPrefixLower = AI_REASON_PREFIX.toLowerCase()
+  const doctorPrefixLower = DOCTOR_REASON_PREFIX.toLowerCase()
+  const lines = raw
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean)
+
+  let aiReason = ''
+  const doctorReasonLines: string[] = []
+
+  for (const line of lines) {
+    const lower = line.toLowerCase()
+    if (lower.startsWith(aiPrefixLower)) {
+      const value = line.slice(AI_REASON_PREFIX.length).trim()
+      if (value) {
+        aiReason = value
+      }
+      continue
+    }
+
+    if (lower.startsWith(doctorPrefixLower)) {
+      const value = line.slice(DOCTOR_REASON_PREFIX.length).trim()
+      if (value) {
+        doctorReasonLines.push(value)
+      }
+      continue
+    }
+
+    doctorReasonLines.push(line)
+  }
+
+  return {
+    aiReason,
+    doctorReason: doctorReasonLines.join('\n').trim(),
+    raw,
+  }
+}
 
 export default function PatientDashboard() {
   const [user, setUser] = useState<User | null>(null)
   const [prescriptions, setPrescriptions] = useState<Prescription[]>([])
+  const [selectedRemarksPrescription, setSelectedRemarksPrescription] = useState<Prescription | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isUploading, setIsUploading] = useState(false)
   const [uploadError, setUploadError] = useState('')
@@ -105,10 +172,12 @@ export default function PatientDashboard() {
 
     try {
       const newPrescription = await submitPrescription(file, symptoms, user.id, doctorUsername)
-      setPrescriptions([newPrescription, ...prescriptions])
+      setPrescriptions((current) => [{ ...newPrescription, items: [] }, ...current])
       setSymptoms('')
       setDoctorUsername('')
-      if (fileInput) fileInput.value = ''
+      if (fileInput) {
+        fileInput.value = ''
+      }
       setUploadSuccess(true)
       showSuccess('Prescription uploaded successfully')
       setIsUploadModalOpen(false)
@@ -119,6 +188,66 @@ export default function PatientDashboard() {
       showError(message)
     } finally {
       setIsUploading(false)
+    }
+  }
+
+  const activePrescriptions = useMemo(() => {
+    return prescriptions.filter((prescription) => {
+      const hasDoctorRemarks = getRemarkItems(prescription).length > 0
+      if (!hasDoctorRemarks) {
+        return true
+      }
+
+      return !Boolean(prescription.seenByPatient)
+    })
+  }, [prescriptions])
+
+  const recentPrescriptions = useMemo(() => {
+    return prescriptions.filter((prescription) => {
+      const hasDoctorRemarks = getRemarkItems(prescription).length > 0
+      return hasDoctorRemarks && Boolean(prescription.seenByPatient)
+    })
+  }, [prescriptions])
+
+  const selectedRemarksItems = useMemo(() => {
+    if (!selectedRemarksPrescription) {
+      return []
+    }
+
+    return getRemarkItems(selectedRemarksPrescription)
+  }, [selectedRemarksPrescription])
+
+  const handleViewRemarks = async (prescription: Prescription) => {
+    const remarkItems = getRemarkItems(prescription)
+    if (remarkItems.length === 0) {
+      showError('Doctor remarks are not available yet for this prescription')
+      return
+    }
+
+    setSelectedRemarksPrescription(prescription)
+
+    if (prescription.seenByPatient) {
+      return
+    }
+
+    try {
+      await updatePrescriptionSeenStatus(prescription.id, true)
+      setPrescriptions((currentPrescriptions) =>
+        currentPrescriptions.map((currentPrescription) =>
+          currentPrescription.id === prescription.id
+            ? { ...currentPrescription, seenByPatient: true }
+            : currentPrescription,
+        ),
+      )
+      setSelectedRemarksPrescription((currentSelected) =>
+        currentSelected && currentSelected.id === prescription.id
+          ? { ...currentSelected, seenByPatient: true }
+          : currentSelected,
+      )
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : 'Failed to update seen status for this prescription'
+      showError(message)
     }
   }
 
@@ -154,10 +283,14 @@ export default function PatientDashboard() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="bg-white border border-slate-200 rounded-lg p-6 hover:shadow-md transition-shadow animate-rise animate-stagger-2 animate-hover-lift">
-          <div className="text-3xl font-bold text-navy-600">{prescriptions.length}</div>
+          <div className="text-3xl font-bold text-navy-600">{activePrescriptions.length}</div>
           <p className="text-slate-600 text-sm mt-2">Active Prescriptions</p>
+        </div>
+        <div className="bg-white border border-slate-200 rounded-lg p-6 hover:shadow-md transition-shadow animate-rise animate-stagger-3 animate-hover-lift">
+          <div className="text-3xl font-bold text-green-600">{recentPrescriptions.length}</div>
+          <p className="text-slate-600 text-sm mt-2">Recent Prescriptions</p>
         </div>
       </div>
 
@@ -181,7 +314,7 @@ export default function PatientDashboard() {
 
           {uploadSuccess && (
             <div className="mt-4 p-3 bg-green-50 border border-green-200 text-green-600 rounded-lg text-sm">
-              Prescription uploaded successfully!
+              Prescription uploaded successfully.
             </div>
           )}
         </div>
@@ -190,13 +323,13 @@ export default function PatientDashboard() {
           <h2 className="text-xl font-bold text-navy-900 mb-4">Quick Actions</h2>
           <div className="space-y-2">
             <button className="w-full text-left px-4 py-3 bg-slate-50 hover:bg-slate-100 rounded-lg transition-colors text-navy-900 font-medium">
-              📋 View Medical Records
+              View Medical Records
             </button>
             <button className="w-full text-left px-4 py-3 bg-slate-50 hover:bg-slate-100 rounded-lg transition-colors text-navy-900 font-medium">
-              💊 View Prescriptions
+              View Prescriptions
             </button>
             <button className="w-full text-left px-4 py-3 bg-slate-50 hover:bg-slate-100 rounded-lg transition-colors text-navy-900 font-medium">
-              🔍 Find a Doctor
+              Find a Doctor
             </button>
           </div>
         </div>
@@ -219,7 +352,7 @@ export default function PatientDashboard() {
                 className="text-slate-500 hover:text-slate-700 text-2xl leading-none"
                 aria-label="Close upload modal"
               >
-                ×
+                x
               </button>
             </div>
 
@@ -281,10 +414,10 @@ export default function PatientDashboard() {
       )}
 
       <div className="bg-white border border-slate-200 rounded-lg p-6 animate-rise animate-stagger-3">
-        <h2 className="text-xl font-bold text-navy-900 mb-4">Recent Prescriptions</h2>
-        {prescriptions.length === 0 ? (
+        <h2 className="text-xl font-bold text-navy-900 mb-4">Active Prescriptions</h2>
+        {activePrescriptions.length === 0 ? (
           <div className="text-center py-8">
-            <p className="text-slate-500">No prescriptions yet</p>
+            <p className="text-slate-500">No active prescriptions.</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -295,11 +428,78 @@ export default function PatientDashboard() {
                   <th className="text-left py-3 px-4 font-semibold text-navy-900">Symptoms</th>
                   <th className="text-left py-3 px-4 font-semibold text-navy-900">Date</th>
                   <th className="text-left py-3 px-4 font-semibold text-navy-900">Doctor ID</th>
-                  <th className="text-left py-3 px-4 font-semibold text-navy-900">Action</th>
+                  <th className="text-left py-3 px-4 font-semibold text-navy-900">Remarks</th>
+                  <th className="text-left py-3 px-4 font-semibold text-navy-900">Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {prescriptions.map((prescription) => (
+                {activePrescriptions.map((prescription) => {
+                  const hasDoctorRemarks = getRemarkItems(prescription).length > 0
+                  return (
+                    <tr key={prescription.id} className="border-b border-slate-100 hover:bg-slate-50">
+                      <td className="py-3 px-4 text-slate-700">{prescription.id}</td>
+                      <td className="py-3 px-4 text-slate-700 text-sm max-w-xs truncate">
+                        {prescription.symptoms}
+                      </td>
+                      <td className="py-3 px-4 text-slate-700 text-sm">
+                        {new Date(prescription.createdAt).toLocaleDateString()}
+                      </td>
+                      <td className="py-3 px-4 text-slate-700 text-sm">{prescription.docId}</td>
+                      <td className="py-3 px-4 text-sm">
+                        {hasDoctorRemarks ? (
+                          <span className="px-2 py-1 rounded-full bg-blue-100 text-blue-700 font-medium">
+                            New remarks
+                          </span>
+                        ) : (
+                          <span className="px-2 py-1 rounded-full bg-slate-100 text-slate-600 font-medium">
+                            Awaiting doctor
+                          </span>
+                        )}
+                      </td>
+                      <td className="py-3 px-4 space-x-2 whitespace-nowrap">
+                        <button
+                          onClick={() => downloadPrescriptionFile(prescription.link, `prescription-${prescription.id}`)}
+                          className="px-3 py-1 bg-navy-600 text-white rounded text-sm hover:bg-navy-700 transition-colors"
+                        >
+                          View File
+                        </button>
+                        <button
+                          onClick={() => handleViewRemarks(prescription)}
+                          disabled={!hasDoctorRemarks}
+                          className="px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          View Remarks
+                        </button>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      <div className="bg-white border border-slate-200 rounded-lg p-6 animate-rise animate-stagger-3">
+        <h2 className="text-xl font-bold text-navy-900 mb-4">Recent Prescriptions</h2>
+        {recentPrescriptions.length === 0 ? (
+          <div className="text-center py-8">
+            <p className="text-slate-500">No recent prescriptions.</p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="border-b border-slate-200">
+                <tr>
+                  <th className="text-left py-3 px-4 font-semibold text-navy-900">ID</th>
+                  <th className="text-left py-3 px-4 font-semibold text-navy-900">Symptoms</th>
+                  <th className="text-left py-3 px-4 font-semibold text-navy-900">Date</th>
+                  <th className="text-left py-3 px-4 font-semibold text-navy-900">Doctor ID</th>
+                  <th className="text-left py-3 px-4 font-semibold text-navy-900">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {recentPrescriptions.map((prescription) => (
                   <tr key={prescription.id} className="border-b border-slate-100 hover:bg-slate-50">
                     <td className="py-3 px-4 text-slate-700">{prescription.id}</td>
                     <td className="py-3 px-4 text-slate-700 text-sm max-w-xs truncate">
@@ -309,12 +509,18 @@ export default function PatientDashboard() {
                       {new Date(prescription.createdAt).toLocaleDateString()}
                     </td>
                     <td className="py-3 px-4 text-slate-700 text-sm">{prescription.docId}</td>
-                    <td className="py-3 px-4">
+                    <td className="py-3 px-4 space-x-2 whitespace-nowrap">
                       <button
                         onClick={() => downloadPrescriptionFile(prescription.link, `prescription-${prescription.id}`)}
                         className="px-3 py-1 bg-navy-600 text-white rounded text-sm hover:bg-navy-700 transition-colors"
                       >
-                        View
+                        View File
+                      </button>
+                      <button
+                        onClick={() => handleViewRemarks(prescription)}
+                        className="px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 transition-colors"
+                      >
+                        View Remarks
                       </button>
                     </td>
                   </tr>
@@ -324,6 +530,76 @@ export default function PatientDashboard() {
           </div>
         )}
       </div>
+
+      {selectedRemarksPrescription && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4"
+          onClick={() => setSelectedRemarksPrescription(null)}
+        >
+          <div
+            className="w-full max-w-3xl bg-white border border-slate-200 rounded-lg p-6 max-h-[90vh] overflow-y-auto animate-modal-in"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-bold text-navy-900">
+                Doctor Remarks for Prescription #{selectedRemarksPrescription.id}
+              </h2>
+              <button
+                type="button"
+                onClick={() => setSelectedRemarksPrescription(null)}
+                className="text-slate-500 hover:text-slate-700 text-2xl leading-none"
+                aria-label="Close remarks modal"
+              >
+                x
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              {selectedRemarksItems.map((item) => {
+                const parsedRemark = parseDocReason(item.docReason || '')
+                return (
+                  <div key={item.id} className="border border-slate-200 rounded-lg p-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <h3 className="text-base font-semibold text-navy-900">{item.name}</h3>
+                      <span className="text-xs px-2 py-1 rounded bg-slate-100 text-slate-600 uppercase">
+                        {item.type}
+                      </span>
+                    </div>
+
+                    {parsedRemark.aiReason && (
+                      <div className="mb-2">
+                        <p className="text-xs text-slate-500 font-semibold">AI Reason</p>
+                        <p className="text-sm text-slate-700">{parsedRemark.aiReason}</p>
+                      </div>
+                    )}
+
+                    {parsedRemark.doctorReason && (
+                      <div className="mb-2">
+                        <p className="text-xs text-slate-500 font-semibold">Doctor Reason</p>
+                        <p className="text-sm text-slate-700 whitespace-pre-wrap">{parsedRemark.doctorReason}</p>
+                      </div>
+                    )}
+
+                    {!parsedRemark.aiReason && !parsedRemark.doctorReason && (
+                      <p className="text-sm text-slate-700 whitespace-pre-wrap">{parsedRemark.raw}</p>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+
+            <div className="mt-6 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setSelectedRemarksPrescription(null)}
+                className="px-4 py-2 bg-slate-300 text-slate-700 rounded-lg hover:bg-slate-400 transition-colors font-medium"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
